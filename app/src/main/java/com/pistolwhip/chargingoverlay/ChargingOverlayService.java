@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ComponentName;
+import android.service.quicksettings.TileService;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.BatteryManager;
@@ -121,6 +123,12 @@ public class ChargingOverlayService extends Service {
             context.startForegroundService(service);
         } else {
             context.stopService(new Intent(context, ChargingOverlayService.class));
+        }
+
+        if (Build.VERSION.SDK_INT >= 24) {
+            TileService.requestListeningState(
+                    context,
+                    new ComponentName(context, ChargingOverlayTileService.class));
         }
     }
 
