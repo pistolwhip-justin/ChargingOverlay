@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,30 +28,28 @@ jobs:
         run: |
           VERSION=$(sed -n "s/.*versionName '\([^']*\)'.*/\1/p" app/build.gradle)
           test "$VERSION" = "1.1.0"
+          VERSION_CODE=$(sed -n "s/.*versionCode \([0-9]*).*/\1/p" app/build.gradle)
+          test "$VERSION_CODE" = "2"
 
-      - name: Build debug APK
+      - name: Build APK
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: Prepare APK
+      - name: Prepare versioned APK
         run: cp app/build/outputs/apk/debug/app-debug.apk "ChargingOverlay-1.1.0.apk"
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ChargingOverlay-1.1.0
-          path: "ChargingOverlay-1.1.0.apk"
-
-      - name: Publish GitHub Release
+      - name: Publish new GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v1.1.0"
           APK="ChargingOverlay-1.1.0.apk"
+
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" --clobber
-          else
-            gh release create "$TAG" "$APK" \
-              --title "$TAG" \
-              --generate-notes \
-              --target main
+            echo "Release $TAG already exists. Refusing to overwrite it."
+            exit 1
           fi
+
+          gh release create "$TAG" "$APK" \
+            --title "$TAG" \
+            --generate-notes \
+            --target main
