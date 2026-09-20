@@ -1,6 +1,9 @@
 package com.pistolwhip.chargingoverlay;
 
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.provider.Settings;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
@@ -16,7 +19,14 @@ public class ChargingOverlayTileService extends TileService {
         boolean newState = !ChargingOverlayService.isEnabled(this);
 
         if (newState && !Settings.canDrawOverlays(this)) {
-            startActivityAndCollapse(new android.content.Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
+            Intent settingsIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+            if (Build.VERSION.SDK_INT >= 34) {
+                PendingIntent pendingIntent = PendingIntent.getActivity(
+                        this, 0, settingsIntent, PendingIntent.FLAG_IMMUTABLE);
+                startActivityAndCollapse(pendingIntent);
+            } else {
+                startActivityAndCollapse(settingsIntent);
+            }
             updateTile();
             return;
         }
@@ -28,6 +38,7 @@ public class ChargingOverlayTileService extends TileService {
     private void updateTile() {
         Tile tile = getQsTile();
         if (tile == null) return;
+
         boolean enabled = ChargingOverlayService.isEnabled(this);
         tile.setState(enabled ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
         tile.setLabel("ChargingOverlay");
