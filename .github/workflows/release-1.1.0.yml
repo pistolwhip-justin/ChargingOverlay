@@ -26,9 +26,9 @@ jobs:
 
       - name: Verify version
         run: |
-          VERSION=$(sed -n "s/.*versionName '\([^']*\)'.*/\1/p" app/build.gradle)
+          VERSION=$(grep -oP "versionName '\K[^']+" app/build.gradle)
           test "$VERSION" = "1.1.0"
-          VERSION_CODE=$(sed -n "s/.*versionCode \([0-9]*).*/\1/p" app/build.gradle)
+          VERSION_CODE=$(grep -oP "versionCode \K[0-9]+" app/build.gradle)
           test "$VERSION_CODE" = "2"
 
       - name: Build APK
