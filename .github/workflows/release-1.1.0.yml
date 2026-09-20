@@ -37,7 +37,7 @@ jobs:
       - name: Prepare versioned APK
         run: cp app/build/outputs/apk/debug/app-debug.apk "ChargingOverlay-1.1.0.apk"
 
-      - name: Publish new GitHub Release
+      - name: Publish or confirm GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -45,7 +45,15 @@ jobs:
           APK="ChargingOverlay-1.1.0.apk"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists. Refusing to overwrite it."
+            ASSET_COUNT=$(gh release view "$TAG" --json assets --jq '.assets | map(select(.name == "'"$APK"'")) | length')
+
+            if [ "$ASSET_COUNT" -eq 1 ]; then
+              echo "Release $TAG already contains $APK. Nothing will be overwritten."
+              exit 0
+            fi
+
+            echo "Release $TAG already exists but does not contain the expected APK."
+            echo "Refusing to modify the existing release."
             exit 1
           fi
 
